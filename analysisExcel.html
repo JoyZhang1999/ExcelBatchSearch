@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel数据处理工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            flex: 1;
+            min-width: 300px;
+            border: 2px dashed #6a11cb;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            background-color: #f9f9ff;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            border-color: #2575fc;
+            background-color: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #6a11cb;
+            margin-bottom: 15px;
+        }
+
+        .upload-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .config-section {
+            margin: 25px 0;
+            padding: 20px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #6a11cb;
+        }
+
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .config-label {
+            width: 150px;
+            font-weight: 500;
+        }
+
+        .config-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+        }
+
+        .config-note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .process-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .process-btn {
+            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+        }
+
+        .process-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            color: #333;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #ff8c00 0%, #ff2d55 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 45, 85, 0.3);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background-color: #f5f7fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .rules-section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #6a11cb;
+        }
+
+        .rules-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .rules-section ul {
+            padding-left: 20px;
+        }
+
+        .rules-section li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                flex-direction: column;
+            }
+
+            .upload-box {
+                min-width: 100%;
+            }
+
+            .config-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .config-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Excel数据处理工具</h1>
+        <p class="subtitle">上传条件文件和数据文件，自动匹配并导出结果</p>
+    </header>
+
+    <div class="content">
+        <div class="rules-section">
+            <h3>数据处理流程</h3>
+            <ul>
+                <li><strong>步骤1：</strong> 解析条件Excel中的查询条件和匹配规则</li>
+                <li><strong>步骤2：</strong> 从数据Excel中提取符合条件的记录</li>
+                <li><strong>步骤3：</strong> 将匹配数据整理成结构化格式</li>
+                <li><strong>步骤4：</strong> 生成并导出查询结果Excel文件</li>
+            </ul>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-box">
+                <div class="upload-icon">📋</div>
+                <h3>上传条件Excel文件</h3>
+                <p>包含查询条件、筛选逻辑和匹配规则</p>
+                <input type="file" id="conditionFile" class="file-input" accept=".xlsx, .xls">
+                <button class="upload-btn" onclick="document.getElementById('conditionFile').click()">选择文件</button>
+                <div id="conditionFileName" class="file-name">未选择文件</div>
+            </div>
+
+            <div class="upload-box">
+                <div class="upload-icon">📊</div>
+                <h3>上传数据Excel文件</h3>
+                <p>包含需要筛选的原始数据</p>
+                <input type="file" id="dataFile" class="file-input" accept=".xlsx, .xls">
+                <button class="upload-btn" onclick="document.getElementById('dataFile').click()">选择文件</button>
+                <div id="dataFileName" class="file-name">未选择文件</div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>筛选配置</h3>
+            <div class="config-item">
+                <label class="config-label" for="columnIndex">筛选列号:</label>
+                <input type="number" id="columnIndex" class="config-input" min="1" value="2">
+                <div class="config-note">请输入要作为筛选条件的列号（从1开始计数）</div>
+            </div>
+        </div>
+
+        <div class="process-section">
+            <button id="processBtn" class="process-btn" disabled>处理数据</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-header">
+                <h3>匹配结果预览</h3>
+                <button id="downloadBtn" class="download-btn">下载结果Excel</button>
+            </div>
+            <div class="table-container">
+                <table id="resultTable">
+                    <thead>
+                    <tr>
+                        <!-- 表头将通过JavaScript动态生成 -->
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- 表格内容将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全局变量
+    let conditionData = null;
+    let dataSource = null;
+    let matchedData = null;
+
+    // 文件选择事件监听
+    document.getElementById('conditionFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('conditionFileName').textContent = file.name;
+            readExcelFile(file, 'condition');
+        }
+    });
+
+    document.getElementById('dataFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('dataFileName').textContent = file.name;
+            readExcelFile(file, 'data');
+        }
+    });
+
+    // 处理按钮事件
+    document.getElementById('processBtn').addEventListener('click', processData);
+
+    // 下载按钮事件
+    document.getElementById('downloadBtn').addEventListener('click', downloadResult);
+
+    // 读取Excel文件
+    function readExcelFile(file, type) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            // 获取第一个工作表
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (type === 'condition') {
+                conditionData = jsonData;
+            } else {
+                dataSource = jsonData;
+            }
+
+            // 检查文件是否已准备就绪
+            checkFilesReady();
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
+    // 检查文件是否已准备就绪
+    function checkFilesReady() {
+        const processBtn = document.getElementById('processBtn');
+        if (conditionData && dataSource) {
+            processBtn.disabled = false;
+        } else {
+            processBtn.disabled = true;
+        }
+    }
+
+    // 处理数据
+    function processData() {
+        try {
+            showStatus('正在处理数据...', 'success');
+
+            // 获取用户输入的列号
+            const columnIndexInput = document.getElementById('columnIndex').value;
+            const secondColumnIndex = parseInt(columnIndexInput) - 1; // 转换为从0开始的索引
+
+            // 验证列号是否有效
+            if (isNaN(secondColumnIndex) || secondColumnIndex < 0) {
+                showStatus('请输入有效的列号（大于等于1）', 'error');
+                return;
+            }
+
+            // 解析条件数据
+            const conditions = parseConditions(conditionData);
+
+            // 根据条件筛选数据
+            matchedData = filterData(dataSource, conditions, secondColumnIndex);
+
+            // 显示结果
+            displayResults(matchedData);
+            document.getElementById('resultSection').style.display = 'block';
+            showStatus('数据处理完成！找到 ' + matchedData.length + ' 条匹配记录', 'success');
+
+        } catch (error) {
+            showStatus('处理数据时出错: ' + error.message, 'error');
+            console.error(error);
+        }
+    }
+
+    // 解析条件
+    function parseConditions(conditionData) {
+        // 假设条件Excel的第一行是表头
+        const headers = conditionData[0];
+        const conditions = [];
+
+        // 从第二行开始是条件数据
+        for (let i = 1; i < conditionData.length; i++) {
+            const row = conditionData[i];
+            const condition = {};
+
+            for (let j = 0; j < headers.length; j++) {
+                if (row[j] !== undefined && row[j] !== '') {
+                    condition[headers[j]] = row[j];
+                }
+            }
+
+            if (Object.keys(condition).length > 0) {
+                conditions.push(condition);
+            }
+        }
+
+        return conditions;
+    }
+
+    // 筛选数据
+    function filterData(dataSource, conditions, secondColumnIndex) {
+        // 假设数据Excel的第一行是表头
+        const dataHeaders = dataSource[0];
+        const result = [];
+
+        // 验证列索引是否在有效范围内
+        if (secondColumnIndex >= dataHeaders.length) {
+            throw new Error(`指定的列号 ${secondColumnIndex + 1} 超过了数据文件的列数 ${dataHeaders.length}`);
+        }
+
+        const secondColumnName = dataHeaders[secondColumnIndex];
+
+        // 如果没有第二列，则使用原有逻辑
+        if (!secondColumnName) {
+            // 原有筛选逻辑
+            for (let i = 1; i < dataSource.length; i++) {
+                const row = dataSource[i];
+                const rowData = {};
+
+                // 将行数据转换为对象
+                for (let j = 0; j < dataHeaders.length; j++) {
+                    rowData[dataHeaders[j]] = row[j];
+                }
+
+                // 检查是否满足任一条件
+                for (const condition of conditions) {
+                    let match = true;
+
+                    for (const key in condition) {
+                        if (rowData[key] !== condition[key]) {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) {
+                        result.push(rowData);
+                        break; // 匹配一个条件即可，避免重复
+                    }
+                }
+            }
+            return result;
+        }
+
+        // 新逻辑：使用指定列作为筛选条件
+        // 从第二行开始是数据
+        for (let i = 1; i < dataSource.length; i++) {
+            const row = dataSource[i];
+            const rowData = {};
+
+            // 将行数据转换为对象
+            for (let j = 0; j < dataHeaders.length; j++) {
+                rowData[dataHeaders[j]] = row[j];
+            }
+
+            // 获取指定列的值作为筛选条件
+            const secondColumnValue = rowData[secondColumnName];
+
+            // 检查条件文件中是否有与指定列值匹配的条件
+            for (const condition of conditions) {
+                let match = true;
+
+                // 检查指定列的值是否在条件中
+                let secondColumnMatch = false;
+                for (const key in condition) {
+                    if (condition[key] === secondColumnValue) {
+                        secondColumnMatch = true;
+                        break;
+                    }
+                }
+
+                // 如果指定列的值在条件中，则匹配
+                if (secondColumnMatch) {
+                    result.push(rowData);
+                    break; // 匹配一个条件即可，避免重复
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // 显示结果
+    function displayResults(data) {
+        const table = document.getElementById('resultTable');
+        const thead = table.querySelector('thead tr');
+        const tbody = table.querySelector('tbody');
+
+        // 清空表格
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 1;
+            cell.textContent = '没有找到匹配的数据';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            tbody.appendChild(row);
+            return;
+        }
+
+        // 创建表头
+        const headers = Object.keys(data[0]);
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            thead.appendChild(th);
+        });
+
+        // 创建表格内容
+        data.forEach(rowData => {
+            const row = document.createElement('tr');
+
+            headers.forEach(header => {
+                const cell = document.createElement('td');
+                cell.textContent = rowData[header] || '';
+                row.appendChild(cell);
+            });
+
+            tbody.appendChild(row);
+        });
+    }
+
+    // 下载结果
+    function downloadResult() {
+        if (!matchedData || matchedData.length === 0) {
+            showStatus('没有数据可下载', 'error');
+            return;
+        }
+
+        try {
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+
+            // 创建工作表
+            const headers = Object.keys(matchedData[0]);
+            const wsData = [headers];
+
+            // 添加数据行
+            matchedData.forEach(row => {
+                const rowData = headers.map(header => row[header]);
+                wsData.push(rowData);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // 将工作表添加到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '查询结果');
+
+            // 生成Excel文件并下载
+            XLSX.writeFile(wb, '查询结果.xlsx');
+            showStatus('文件下载成功！', 'success');
+        } catch (error) {
+            showStatus('下载文件时出错: ' + error.message, 'error');
+            console.error(error);
+        }
+    }
+
+    // 显示状态消息
+    function showStatus(message, type) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = 'status ' + type;
+        statusEl.style.display = 'block';
+
+        // 5秒后自动隐藏
+        setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 5000);
+    }
+</script>
+</body>
+</html>
