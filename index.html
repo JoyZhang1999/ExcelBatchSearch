@@ -351,6 +351,11 @@
                 <input type="number" id="columnIndex" class="config-input" min="1" value="2">
                 <div class="config-note">请输入要作为筛选条件的列号（从1开始计数）</div>
             </div>
+            <div class="config-item">
+                <label class="config-label" for="hasHeader">包含表头:</label>
+                <input type="checkbox" id="hasHeader" class="config-input" checked>
+                <div class="config-note">勾选表示Excel文件包含表头行，取消勾选表示没有表头</div>
+            </div>
         </div>
 
         <div class="process-section">
@@ -453,6 +458,9 @@
             const columnIndexInput = document.getElementById('columnIndex').value;
             const secondColumnIndex = parseInt(columnIndexInput) - 1; // 转换为从0开始的索引
 
+            // 获取是否有表头的选项
+            const hasHeader = document.getElementById('hasHeader').checked;
+
             // 验证列号是否有效
             if (isNaN(secondColumnIndex) || secondColumnIndex < 0) {
                 showStatus('请输入有效的列号（大于等于1）', 'error');
@@ -460,10 +468,10 @@
             }
 
             // 解析条件数据
-            const conditions = parseConditions(conditionData);
+            const conditions = parseConditions(conditionData, hasHeader);
 
             // 根据条件筛选数据
-            matchedData = filterData(dataSource, conditions, secondColumnIndex);
+            matchedData = filterData(dataSource, conditions, secondColumnIndex, hasHeader);
 
             // 显示结果
             displayResults(matchedData);
@@ -477,13 +485,28 @@
     }
 
     // 解析条件
-    function parseConditions(conditionData) {
-        // 假设条件Excel的第一行是表头
-        const headers = conditionData[0];
+    function parseConditions(conditionData, hasHeader) {
+        // 根据是否有表头来处理
+        let headers, startIndex;
+        if (hasHeader && conditionData.length > 0) {
+            // 有表头的情况
+            headers = conditionData[0];
+            startIndex = 1;
+        } else {
+            // 没有表头的情况，使用列索引作为表头名称
+            headers = [];
+            if (conditionData.length > 0) {
+                for (let i = 0; i < conditionData[0].length; i++) {
+                    headers.push('列' + (i + 1));
+                }
+            }
+            startIndex = 0;
+        }
+
         const conditions = [];
 
-        // 从第二行开始是条件数据
-        for (let i = 1; i < conditionData.length; i++) {
+        // 从startIndex开始是条件数据
+        for (let i = startIndex; i < conditionData.length; i++) {
             const row = conditionData[i];
             const condition = {};
 
@@ -502,9 +525,24 @@
     }
 
     // 筛选数据
-    function filterData(dataSource, conditions, secondColumnIndex) {
-        // 假设数据Excel的第一行是表头
-        const dataHeaders = dataSource[0];
+    function filterData(dataSource, conditions, secondColumnIndex, hasHeader) {
+        // 根据是否有表头来处理
+        let dataHeaders, startIndex;
+        if (hasHeader && dataSource.length > 0) {
+            // 有表头的情况
+            dataHeaders = dataSource[0];
+            startIndex = 1;
+        } else {
+            // 没有表头的情况，使用列索引作为表头名称
+            dataHeaders = [];
+            if (dataSource.length > 0) {
+                for (let i = 0; i < dataSource[0].length; i++) {
+                    dataHeaders.push('列' + (i + 1));
+                }
+            }
+            startIndex = 0;
+        }
+
         const result = [];
 
         // 验证列索引是否在有效范围内
@@ -517,7 +555,7 @@
         // 如果没有第二列，则使用原有逻辑
         if (!secondColumnName) {
             // 原有筛选逻辑
-            for (let i = 1; i < dataSource.length; i++) {
+            for (let i = startIndex; i < dataSource.length; i++) {
                 const row = dataSource[i];
                 const rowData = {};
 
@@ -547,8 +585,8 @@
         }
 
         // 新逻辑：使用指定列作为筛选条件
-        // 从第二行开始是数据
-        for (let i = 1; i < dataSource.length; i++) {
+        // 从startIndex开始是数据
+        for (let i = startIndex; i < dataSource.length; i++) {
             const row = dataSource[i];
             const rowData = {};
 
@@ -678,3 +716,4 @@
 </body>
 
 </html>
+
